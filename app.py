@@ -1,4 +1,4 @@
-# importing necessary libraries and modules
+# importing necessary Libraries
 
 import streamlit as st
 from employee_manager import add_employee, list_all_employees, get_employee_by_id
