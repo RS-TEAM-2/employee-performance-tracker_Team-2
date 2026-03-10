@@ -1,3 +1,5 @@
+# importing necessary libraries and modules
+
 import streamlit as st
 from employee_manager import add_employee, list_all_employees, get_employee_by_id
 from project_manager import add_project, assign_employee_to_project, get_projects_for_employee
