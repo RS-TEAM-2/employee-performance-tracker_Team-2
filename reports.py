@@ -1,6 +1,7 @@
 from db_connections import get_sql_connection, get_mongo_collection
 
 
+
 def generate_employee_project_report():
     conn = get_sql_connection()
     try:
