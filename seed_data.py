@@ -44,7 +44,7 @@ try:
         ('Rajat','Khanna','rajat.khanna@company.com','2021-05-17','Sales'),
         ('Simran','Gill','simran.gill@company.com','2023-10-02','Data Science'),
         ('Naveen','Pillai','naveen.pillai@company.com','2022-01-30','Engineering'),
-        ('Tanya','Saxena','tanya.saxena@company.com','2024-03-19','Marketing')
+        ('Ishaan','Jain','ishaan.jain@company.com','2024-03-19','Marketing')
     """)
     conn.commit()
     print("30 employees inserted into SQLite.")
