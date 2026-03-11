@@ -1,9 +1,39 @@
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from db_connections import get_sql_connection
 
 
+def _parse_date(value):
+    """Parse a date value which may be a date object or an ISO date string.
+    Returns a `date` or None. Raises ValueError for invalid formats/types.
+    """
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        value = value.strip()
+        try:
+            return date.fromisoformat(value)
+        except ValueError:
+            try:
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            except Exception:
+                raise ValueError(f"Invalid date format: {value}. Expected YYYY-MM-DD or date object.")
+    raise ValueError("Invalid date type for date fields.")
+
+
 def add_project(project_name, start_date, end_date=None, status="Planning"):
+    # validate/parse dates first
+    start_dt = _parse_date(start_date)
+    end_dt = _parse_date(end_date)
+
+    if start_dt is None:
+        raise ValueError("start_date is required and must be a valid date.")
+
+    if end_dt is not None and start_dt > end_dt:
+        raise ValueError("Start date cannot be after end date.")
+
     conn = get_sql_connection()
     try:
         conn.execute(
@@ -11,7 +41,7 @@ def add_project(project_name, start_date, end_date=None, status="Planning"):
             INSERT INTO Projects (project_name, start_date, end_date, status)
             VALUES (?, ?, ?, ?)
             """,
-            (project_name, start_date, end_date, status)
+            (project_name, start_dt.isoformat(), end_dt.isoformat() if end_dt else None, status)
         )
         conn.commit()
         print(f"Project '{project_name}' added successfully.")

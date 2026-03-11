@@ -1,1 +1,34 @@
 .env
+# Virtualenvs
+.venv/
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Coverage
+.coverage
+htmlcov/
+
+# Local DB and backups
+company.db
+company.db.bak
+
+# Environment files
+.env.local
+
+# Debug tools
+tools/
+
+# Editor/IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+
+# Streamlit
+.streamlit/

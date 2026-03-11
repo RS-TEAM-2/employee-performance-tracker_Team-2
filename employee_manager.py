@@ -1,8 +1,25 @@
 import sqlite3
+import re
 from db_connections import get_sql_connection
 
 
+def is_valid_email(email: str) -> bool:
+    """Simple email format validation."""
+    if not email:
+        return False
+    email = email.strip()
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    return re.match(pattern, email) is not None
+
+
 def add_employee(first_name, last_name, email, hire_date, department):
+    # Basic validation and normalization
+    if email is None:
+        raise ValueError("Email is required.")
+    email = email.strip()
+    if not is_valid_email(email):
+        raise ValueError(f"Invalid email address: {email}")
+
     conn = get_sql_connection()
     try:
         conn.execute(

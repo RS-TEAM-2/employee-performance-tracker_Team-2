@@ -7,10 +7,69 @@ from performance_reviewer import submit_performance_review, get_performance_revi
 from reports import generate_employee_project_report, generate_employee_performance_summary
 from db_connections import init_sql_db, get_sql_connection, get_mongo_collection
 import pandas as pd
+import re
 
 init_sql_db()
 
 st.set_page_config(page_title="Employee Performance Tracker", layout="wide")
+
+# --- Simple Gmail-based authentication ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.user_email = ""
+if 'hide_login_ui' not in st.session_state:
+    st.session_state.hide_login_ui = False
+
+def is_valid_gmail(email: str) -> bool:
+    if not email or '@' not in email:
+        return False
+    local, _, domain = email.partition('@')
+    return domain.lower() == 'gmail.com' and len(local) > 0
+
+
+def is_valid_email(email: str) -> bool:
+    if not email or '@' not in email:
+        return False
+    email = email.strip()
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    return re.match(pattern, email) is not None
+
+def show_login():
+    # if another run set this flag, don't render the login UI
+    if st.session_state.get('hide_login_ui'):
+        return
+    login_container = st.container()
+    with login_container:
+        st.title("Sign in")
+        st.write("Sign in with your Gmail account to access the Employee Performance Tracker.")
+        with st.form("login_form"):
+            email = st.text_input("Gmail address")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Sign in")
+            if submitted:
+                if is_valid_gmail(email):
+                    st.session_state.logged_in = True
+                    st.session_state.user_email = email
+                    st.session_state.hide_login_ui = True
+                    # remove the login UI immediately in this run
+                    login_container.empty()
+                else:
+                    st.error("Please enter a valid Gmail address (example@gmail.com).")
+
+# If not logged-in, show login and stop further rendering
+if not st.session_state.logged_in:
+    show_login()
+    if not st.session_state.logged_in:
+        st.stop()
+
+# Sidebar sign-out + info
+with st.sidebar:
+    st.write(f"Signed in: {st.session_state.user_email}")
+    if st.button("Sign out"):
+        st.session_state.logged_in = False
+        st.session_state.user_email = ""
+        st.session_state.hide_login_ui = False
+        st.success("Signed out")
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Employees", "Projects", "Performance Reviews", "Reports"])
@@ -51,8 +110,15 @@ if page == "Employees":
 
             submitted = st.form_submit_button("Add Employee")
             if submitted:
+                # normalize inputs
+                first_name = first_name.strip()
+                last_name = last_name.strip()
+                email = email.strip()
+
                 if not first_name or not last_name or not email:
                     st.error("Please fill in all fields.")
+                elif not is_valid_email(email):
+                    st.error("Please enter a valid email address.")
                 else:
                     try:
                         add_employee(first_name, last_name, email, str(hire_date), department)
@@ -97,13 +163,18 @@ elif page == "Projects":
 
             submitted = st.form_submit_button("Add Project")
             if submitted:
+                project_name = project_name.strip()
                 if not project_name:
                     st.error("Please enter a project name.")
+                elif end_date and start_date > end_date:
+                    st.error("Start date cannot be after the end date.")
                 else:
                     try:
                         add_project(project_name, str(start_date),
                                     str(end_date) if end_date else None, status)
                         st.success(f"Project '{project_name}' added successfully.")
+                    except ValueError as ve:
+                        st.error(str(ve))
                     except Exception as e:
                         st.error(str(e))
 
