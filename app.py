@@ -272,8 +272,10 @@ elif page == "Performance Reviews":
             emp_options = {f"{e['first_name']} {e['last_name']} (ID: {e['employee_id']})": e['employee_id'] for e in employees}
 
             with st.form("review_form"):
-                selected      = st.selectbox("Select Employee", list(emp_options.keys()))
-                reviewer_name = st.text_input("Reviewer Name")
+                selected_reviewee = st.selectbox("Select Employee", list(emp_options.keys()))
+                # Reviewer should be chosen from existing employees
+                reviewer_options = {f"{e['first_name']} {e['last_name']} (ID: {e['employee_id']})": e['employee_id'] for e in employees}
+                selected_reviewer = st.selectbox("Reviewer", list(reviewer_options.keys()))
                 rating        = st.slider("Overall Rating", 1.0, 5.0, 3.0, step=0.5)
 
                 col1, col2 = st.columns(2)
@@ -286,20 +288,26 @@ elif page == "Performance Reviews":
 
                 submitted = st.form_submit_button("Submit Review")
                 if submitted:
-                    if not reviewer_name or not strengths or not improvements or not goals:
+                    if not selected_reviewer or not strengths or not improvements or not goals:
                         st.error("Please fill in all fields.")
                     else:
                         try:
-                            submit_performance_review(
-                                emp_options[selected],
-                                reviewer_name,
-                                rating,
-                                [s.strip() for s in strengths.splitlines() if s.strip()],
-                                [a.strip() for a in improvements.splitlines() if a.strip()],
-                                comments,
-                                [g.strip() for g in goals.splitlines() if g.strip()]
-                            )
-                            st.success("Review submitted successfully.")
+                            reviewer_id = reviewer_options[selected_reviewer]
+                            # quick client-side check: ensure reviewer has at least one assignment
+                            reviewer_projects = get_projects_for_employee(reviewer_id)
+                            if not reviewer_projects:
+                                st.error("Selected reviewer has no project assignments and cannot submit reviews.")
+                            else:
+                                submit_performance_review(
+                                    emp_options[selected_reviewee],
+                                    reviewer_id,
+                                    rating,
+                                    [s.strip() for s in strengths.splitlines() if s.strip()],
+                                    [a.strip() for a in improvements.splitlines() if a.strip()],
+                                    comments,
+                                    [g.strip() for g in goals.splitlines() if g.strip()]
+                                )
+                                st.success("Review submitted successfully.")
                         except Exception as e:
                             st.error(str(e))
 

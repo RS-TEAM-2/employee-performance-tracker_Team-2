@@ -12,8 +12,26 @@ def is_valid_email(email: str) -> bool:
     return re.match(pattern, email) is not None
 
 
+def _normalize_and_validate_name(name: str, field: str) -> str:
+    if name is None:
+        raise ValueError(f"{field} is required.")
+    if not isinstance(name, str):
+        raise ValueError(f"{field} must be a string.")
+    value = " ".join(name.strip().split())
+    if value == "":
+        raise ValueError(f"{field} is required.")
+    # Only allow letters and spaces
+    if not re.match(r"^[A-Za-z ]+$", value):
+        raise ValueError(f"{field} must contain only letters and spaces.")
+    return value.title()
+
+
 def add_employee(first_name, last_name, email, hire_date, department):
     # Basic validation and normalization
+    # normalize/validate names
+    first_name = _normalize_and_validate_name(first_name, "First name")
+    last_name = _normalize_and_validate_name(last_name, "Last name")
+
     if email is None:
         raise ValueError("Email is required.")
     email = email.strip()
