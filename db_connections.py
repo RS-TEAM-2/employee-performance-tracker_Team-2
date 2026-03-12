@@ -3,6 +3,7 @@ import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import certifi
+from contextlib import contextmanager
 
 load_dotenv()
 
@@ -16,9 +17,19 @@ def get_sql_connection():
     return conn
 
 
-def init_sql_db():
+@contextmanager
+def sql_connection_context():
+    """Context manager that yields a configured SQLite connection and
+    guarantees it will be closed when the context exits."""
     conn = get_sql_connection()
     try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def init_sql_db():
+    with sql_connection_context() as conn:
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS Employees (
                 employee_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -49,8 +60,6 @@ def init_sql_db():
         """)
         conn.commit()
         print("SQLite tables ready.")
-    finally:
-        conn.close()
 
 
 def get_mongo_collection():
