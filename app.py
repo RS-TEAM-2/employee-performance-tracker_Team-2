@@ -5,7 +5,7 @@ from employee_manager import add_employee, list_all_employees, get_employee_by_i
 from project_manager import add_project, assign_employee_to_project, get_projects_for_employee
 from performance_reviewer import submit_performance_review, get_performance_reviews_for_employee
 from reports import generate_employee_project_report, generate_employee_performance_summary
-from db_connections import init_sql_db, get_sql_connection, get_mongo_collection
+from db_connections import init_sql_db, sql_connection_context, get_mongo_collection
 import pandas as pd
 import re
 
@@ -136,11 +136,8 @@ elif page == "Projects":
 
     with tab1:
         st.subheader("All Projects")
-        conn = get_sql_connection()
-        try:
+        with sql_connection_context() as conn:
             rows = conn.execute("SELECT * FROM Projects ORDER BY start_date DESC").fetchall()
-        finally:
-            conn.close()
 
         if rows:
             df = pd.DataFrame([dict(r) for r in rows])
@@ -181,11 +178,8 @@ elif page == "Projects":
     with tab3:
         st.subheader("Assign Employee to Project")
         employees = list_all_employees()
-        conn = get_sql_connection()
-        try:
+        with sql_connection_context() as conn:
             projects = conn.execute("SELECT project_id, project_name FROM Projects").fetchall()
-        finally:
-            conn.close()
 
         if not employees:
             st.warning("No employees found. Please add employees first.")
@@ -321,8 +315,7 @@ elif page == "Reports":
 
     with tab1:
         st.subheader("Full Project Assignment Report")
-        conn = get_sql_connection()
-        try:
+        with sql_connection_context() as conn:
             rows = conn.execute("""
                 SELECT e.first_name || ' ' || e.last_name AS employee_name,
                        p.project_name, ep.role, ep.assignment_date, p.status
@@ -331,8 +324,6 @@ elif page == "Reports":
                 JOIN Projects p  ON ep.project_id  = p.project_id
                 ORDER BY e.first_name
             """).fetchall()
-        finally:
-            conn.close()
 
         if rows:
             df = pd.DataFrame([dict(r) for r in rows])

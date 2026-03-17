@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from db_connections import init_sql_db, get_sql_connection, get_mongo_collection
+from db_connections import init_sql_db, sql_connection_context, get_mongo_collection
 
 print("Setting up databases...")
 
@@ -10,8 +10,7 @@ print("Setting up databases...")
 init_sql_db()
 
 # Step 2 - Insert all 30 employees
-conn = get_sql_connection()
-try:
+with sql_connection_context() as conn:
     conn.execute("""
         INSERT OR IGNORE INTO Employees
         (first_name, last_name, email, hire_date, department) VALUES
@@ -48,12 +47,9 @@ try:
     """)
     conn.commit()
     print("30 employees inserted into SQLite.")
-finally:
-    conn.close()
 
 # Step 3 - Insert 5 projects
-conn = get_sql_connection()
-try:
+with sql_connection_context() as conn:
     conn.execute("""
         INSERT OR IGNORE INTO Projects
         (project_name, start_date, end_date, status) VALUES
@@ -65,12 +61,9 @@ try:
     """)
     conn.commit()
     print("5 projects inserted into SQLite.")
-finally:
-    conn.close()
 
 # Step 4 - Insert 10 assignments
-conn = get_sql_connection()
-try:
+with sql_connection_context() as conn:
     conn.execute("""
         INSERT OR IGNORE INTO EmployeeProjects
         (employee_id, project_id, role, assignment_date) VALUES
@@ -87,8 +80,6 @@ try:
     """)
     conn.commit()
     print("10 assignments inserted into SQLite.")
-finally:
-    conn.close()
 
 # Step 5 - Insert reviews into MongoDB
 col = get_mongo_collection()

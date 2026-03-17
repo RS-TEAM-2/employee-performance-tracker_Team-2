@@ -1,6 +1,6 @@
 import sqlite3
 import re
-from db_connections import get_sql_connection
+from db_connections import sql_connection_context
 
 
 def is_valid_email(email: str) -> bool:
@@ -38,41 +38,33 @@ def add_employee(first_name, last_name, email, hire_date, department):
     if not is_valid_email(email):
         raise ValueError(f"Invalid email address: {email}")
 
-    conn = get_sql_connection()
-    try:
-        conn.execute(
-            """
-            INSERT INTO Employees (first_name, last_name, email, hire_date, department)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (first_name, last_name, email, hire_date, department)
-        )
-        conn.commit()
-        print(f"Employee {first_name} {last_name} added successfully.")
-        return True
-    except sqlite3.IntegrityError:
-        raise ValueError(f"Email '{email}' already exists.")
-    finally:
-        conn.close()
+    with sql_connection_context() as conn:
+        try:
+            conn.execute(
+                """
+                INSERT INTO Employees (first_name, last_name, email, hire_date, department)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (first_name, last_name, email, hire_date, department)
+            )
+            conn.commit()
+            print(f"Employee {first_name} {last_name} added successfully.")
+            return True
+        except sqlite3.IntegrityError:
+            raise ValueError(f"Email '{email}' already exists.")
 
 
 def get_employee_by_id(employee_id):
-    conn = get_sql_connection()
-    try:
+    with sql_connection_context() as conn:
         cursor = conn.execute(
             "SELECT * FROM Employees WHERE employee_id = ?",
             (employee_id,)
         )
         row = cursor.fetchone()
         return dict(row) if row else None
-    finally:
-        conn.close()
 
 
 def list_all_employees():
-    conn = get_sql_connection()
-    try:
+    with sql_connection_context() as conn:
         cursor = conn.execute("SELECT * FROM Employees")
         return [dict(row) for row in cursor.fetchall()]
-    finally:
-        conn.close()

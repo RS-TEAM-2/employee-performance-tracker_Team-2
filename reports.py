@@ -1,10 +1,9 @@
-from db_connections import get_sql_connection, get_mongo_collection
+from db_connections import sql_connection_context, get_mongo_collection
 
 
 
 def generate_employee_project_report():
-    conn = get_sql_connection()
-    try:
+    with sql_connection_context() as conn:
         cursor = conn.execute("""
             SELECT e.first_name || ' ' || e.last_name AS employee_name,
                    p.project_name, ep.role, ep.assignment_date, p.status
@@ -22,19 +21,14 @@ def generate_employee_project_report():
         print(f"{'-'*80}")
         for row in rows:
             print(f"{row['employee_name']:<25} {row['project_name']:<25} {row['role']:<15} {row['assignment_date']:<12} {row['status']}")
-    finally:
-        conn.close()
 
 
 def generate_employee_performance_summary(employee_id):
-    conn = get_sql_connection()
-    try:
+    with sql_connection_context() as conn:
         emp = conn.execute(
             "SELECT * FROM Employees WHERE employee_id = ?",
             (employee_id,)
         ).fetchone()
-    finally:
-        conn.close()
 
     if emp is None:
         print(f"No employee found with ID {employee_id}.")
